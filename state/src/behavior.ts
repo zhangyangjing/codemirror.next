@@ -12,8 +12,8 @@ function noBehavior(): A<BehaviorUse> { return none }
 
 const noDefault: any = {}
 
-export class Behavior<Spec, Value = Spec> {
-  private knownSub: Behavior<any>[] = []
+export class Behavior<Spec, Value> {
+  private knownSub: Behavior<any, any>[] = []
 
   // @internal
   constructor(/* @internal */ public combine: ((specs: A<Spec>) => Value) | null,
@@ -57,7 +57,7 @@ export class Behavior<Spec, Value = Spec> {
   static indentation: SetBehavior<(state: EditorState, pos: number) => number>
 
   // @internal
-  hasSubBehavior(behavior: Behavior<any>): boolean {
+  hasSubBehavior(behavior: Behavior<any, any>): boolean {
     for (let sub of this.knownSub)
       if (sub == behavior || sub.hasSubBehavior(behavior)) return true
     return false
@@ -95,7 +95,7 @@ export class Behavior<Spec, Value = Spec> {
 
 export class SetBehavior<Spec> extends Behavior<Spec, A<Spec>> {
   get(state: EditorState): A<Spec> {
-    return state.config.behavior.get(this) || none
+    return super.get(state) || none
   }
 }
 
@@ -114,7 +114,7 @@ export class BehaviorUse<Spec = any> {
 }
 
 export class BehaviorStore {
-  behaviors: Behavior<any>[] = []
+  behaviors: Behavior<any, any>[] = []
   values: any[] = []
 
   get<Value>(behavior: Behavior<any, Value>): Value | undefined {
@@ -146,7 +146,7 @@ export class BehaviorStore {
   }
 }
 
-function findTopType(behaviors: BehaviorUse[]): Behavior<any> {
+function findTopType(behaviors: BehaviorUse[]): Behavior<any, any> {
   for (let behavior of behaviors)
     if (!behaviors.some(b => b.type.hasSubBehavior(behavior.type)))
       return behavior.type
