@@ -16,23 +16,46 @@ export class Behavior<Spec, Value> {
   private knownSub: Behavior<any, any>[] = []
 
   // @internal
-  constructor(/* @internal */ public combine: ((specs: A<Spec>) => Value) | null,
-              /* @internal */ public behavior: (value: any) => A<BehaviorUse>,
+  constructor(/* @internal */ public takeType: (behaviors: BehaviorUse[]) => Value,
               private default_: Spec) {}
 
   static define<Spec, Value = Spec>({combine, behavior = noBehavior, default: default_ = noDefault}: {
     combine: (specs: A<Spec>) => Value,
-    behavior?: (value: any) => A<BehaviorUse>,
+    behavior?: (value: Value) => A<BehaviorUse>,
     default?: Spec
   }) {
-    return new Behavior<Spec, Value>(combine, behavior, default_)
+    let takeType = function (behaviors: BehaviorUse[]) {
+      let type: Behavior<Spec, Value> = this;
+      let specs = type.sortedSpecs(behaviors)
+      let value = combine.call(type, specs), first = true
+      let subs = behavior.call(type, value)
+      type.registerSubBehaviors(subs)
+      for (let i = 0; i < behaviors.length; i++) if (behaviors[i].type == type) {
+        let sub = first ? subs.map(b => b.fillPriority(behaviors[i].priority)) : none
+        behaviors.splice(i, 1, ...sub)
+        first = false
+        i += sub.length - 1
+      }
+      return value
+    }
+    return new Behavior<Spec, Value>(takeType, default_)
   }
 
   static defineSet<Spec>({behavior = noBehavior, default: default_ = noDefault}: {
     behavior?: (spec: Spec) => A<BehaviorUse>,
     default?: Spec
   } = {}) {
-    return new SetBehavior<Spec>(null, behavior, default_)
+    let takeType = function (behaviors: BehaviorUse[]) {
+      let type: Behavior<Spec, A<Spec>> = this
+      let specs = type.sortedSpecs(behaviors)
+      for (let i = 0; i < behaviors.length; i++) if (behaviors[i].type == type) {
+        let sub = type.getBehavior(behavior.call(type, behaviors[i].spec), behaviors[i].priority)
+        behaviors.splice(i, 1, ...sub)
+        i += sub.length - 1
+      }
+      return specs
+    }
+    return new SetBehavior<Spec>(takeType, default_)
   }
 
   use(spec: Spec = this.default_, priority: Priority = noPriority): BehaviorUse<Spec> {
@@ -63,13 +86,25 @@ export class Behavior<Spec, Value> {
     return false
   }
 
-  // @internal
-  getBehavior(input: any, priority: Priority): A<BehaviorUse> {
-    let sub = this.behavior(input)
+  private registerSubBehaviors(sub: A<BehaviorUse>) {
     for (let b of sub)
       if (this.knownSub.indexOf(b.type) < 0)
         this.knownSub.push(b.type)
+  }
+
+  private getBehavior(sub: A<BehaviorUse>, priority: Priority): A<BehaviorUse> {
+    this.registerSubBehaviors(sub)
     return sub.map(b => b.fillPriority(priority))
+  }
+
+  private sortedSpecs(behaviors: A<BehaviorUse>): A<Spec> {
+    let specs: BehaviorUse<Spec>[] = []
+    for (let spec of behaviors) if (spec.type == this) {
+      let i = 0
+      while (i < specs.length && specs[i].priority >= spec.priority) i++
+      specs.splice(i, 0, spec)
+    }
+    return specs.map(s => s.spec)
   }
 
   // Utility function for combining behaviors to fill in a config
@@ -138,7 +173,7 @@ export class BehaviorStore {
       // that newly gathered information will make the next attempt
       // more successful.
       if (set.behaviors.indexOf(top) > -1) return this.resolve(behaviors)
-      let value = takeType(pending, top)
+      let value = top.takeType(pending)
       set.behaviors.push(top)
       set.values.push(value)
     }
@@ -151,31 +186,4 @@ function findTopType(behaviors: BehaviorUse[]): Behavior<any, any> {
     if (!behaviors.some(b => b.type.hasSubBehavior(behavior.type)))
       return behavior.type
   throw new RangeError("Sub-behavior cycle in behaviors")
-}
-
-function takeType<Spec, Value>(behaviors: BehaviorUse[],
-                               type: Behavior<Spec, Value>): Value {
-  let specs: BehaviorUse<Spec>[] = []
-  for (let spec of behaviors) if (spec.type == type) {
-    let i = 0
-    while (i < specs.length && specs[i].priority >= spec.priority) i++
-    specs.splice(i, 0, spec)
-  }
-  if (type.combine) {
-    let value = type.combine(specs.map(s => s.spec)), first = true
-    for (let i = 0; i < behaviors.length; i++) if (behaviors[i].type == type) {
-      let sub = first ? type.getBehavior(value, behaviors[i].priority) : none
-      behaviors.splice(i, 1, ...sub)
-      first = false
-      i += sub.length - 1
-    }
-    return value
-  } else {
-    for (let i = 0; i < behaviors.length; i++) if (behaviors[i].type == type) {
-      let sub = type.getBehavior(behaviors[i].spec, behaviors[i].priority)
-      behaviors.splice(i, 1, ...sub)
-      i += sub.length - 1
-    }
-    return specs.map(s => s.spec) as any as Value
-  }
 }
