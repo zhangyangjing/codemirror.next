@@ -12,50 +12,24 @@ function noBehavior(): A<BehaviorUse> { return none }
 
 const noDefault: any = {}
 
-export class Behavior<Spec, Value> {
+export abstract class Behavior<Spec, Value> {
   private knownSub: Behavior<any, any>[] = []
 
-  // @internal
-  constructor(/* @internal */ public takeType: (behaviors: BehaviorUse[]) => Value,
-              private default_: Spec) {}
+  protected constructor(private default_: Spec) {}
 
   static define<Spec, Value = Spec>({combine, behavior = noBehavior, default: default_ = noDefault}: {
     combine: (specs: A<Spec>) => Value,
     behavior?: (value: Value) => A<BehaviorUse>,
     default?: Spec
   }) {
-    let takeType = function (behaviors: BehaviorUse[]) {
-      let type: Behavior<Spec, Value> = this;
-      let specs = type.sortedSpecs(behaviors)
-      let value = combine.call(type, specs), first = true
-      let subs = behavior.call(type, value)
-      type.registerSubBehaviors(subs)
-      for (let i = 0; i < behaviors.length; i++) if (behaviors[i].type == type) {
-        let sub = first ? subs.map(b => b.fillPriority(behaviors[i].priority)) : none
-        behaviors.splice(i, 1, ...sub)
-        first = false
-        i += sub.length - 1
-      }
-      return value
-    }
-    return new Behavior<Spec, Value>(takeType, default_)
+    return new SimpleBehavior<Spec, Value>(combine, behavior, default_)
   }
 
   static defineSet<Spec>({behavior = noBehavior, default: default_ = noDefault}: {
     behavior?: (spec: Spec) => A<BehaviorUse>,
     default?: Spec
   } = {}) {
-    let takeType = function (behaviors: BehaviorUse[]) {
-      let type: Behavior<Spec, A<Spec>> = this
-      let specs = type.sortedSpecs(behaviors)
-      for (let i = 0; i < behaviors.length; i++) if (behaviors[i].type == type) {
-        let sub = type.getBehavior(behavior.call(type, behaviors[i].spec), behaviors[i].priority)
-        behaviors.splice(i, 1, ...sub)
-        i += sub.length - 1
-      }
-      return specs
-    }
-    return new SetBehavior<Spec>(takeType, default_)
+    return new SetBehavior<Spec>(behavior, default_)
   }
 
   use(spec: Spec = this.default_, priority: Priority = noPriority): BehaviorUse<Spec> {
@@ -67,18 +41,6 @@ export class Behavior<Spec, Value> {
     return state.config.behavior.get(this)
   }
 
-  static stateField: SetBehavior<StateField<any>>
-
-  static multipleSelections = Behavior.define<boolean, boolean>({
-    combine: values => values.indexOf(true) > -1,
-    default: true
-  })
-
-  // FIXME move to view?
-  static viewPlugin: SetBehavior<(view: any) => any>
-
-  static indentation: SetBehavior<(state: EditorState, pos: number) => number>
-
   // @internal
   hasSubBehavior(behavior: Behavior<any, any>): boolean {
     for (let sub of this.knownSub)
@@ -86,18 +48,21 @@ export class Behavior<Spec, Value> {
     return false
   }
 
-  private registerSubBehaviors(sub: A<BehaviorUse>) {
+  // @internal
+  abstract takeType(behaviors: BehaviorUse[]): Value;
+
+  protected registerSubBehaviors(sub: A<BehaviorUse>) {
     for (let b of sub)
       if (this.knownSub.indexOf(b.type) < 0)
         this.knownSub.push(b.type)
   }
 
-  private getBehavior(sub: A<BehaviorUse>, priority: Priority): A<BehaviorUse> {
+  protected getBehaviors(sub: A<BehaviorUse>, priority: Priority): A<BehaviorUse> {
     this.registerSubBehaviors(sub)
     return sub.map(b => b.fillPriority(priority))
   }
 
-  private sortedSpecs(behaviors: A<BehaviorUse>): A<Spec> {
+  protected sortedSpecs(behaviors: A<BehaviorUse>): A<Spec> {
     let specs: BehaviorUse<Spec>[] = []
     for (let spec of behaviors) if (spec.type == this) {
       let i = 0
@@ -106,6 +71,15 @@ export class Behavior<Spec, Value> {
     }
     return specs.map(s => s.spec)
   }
+
+  static stateField: SetBehavior<StateField<any>>
+
+  static multipleSelections: Behavior<boolean, boolean>
+
+  // FIXME move to view?
+  static viewPlugin: SetBehavior<(view: any) => any>
+
+  static indentation: SetBehavior<(state: EditorState, pos: number) => number>
 
   // Utility function for combining behaviors to fill in a config
   // object from an array of provided configs. Will, by default, error
@@ -128,15 +102,46 @@ export class Behavior<Spec, Value> {
   }
 }
 
-export class SetBehavior<Spec> extends Behavior<Spec, A<Spec>> {
-  get(state: EditorState): A<Spec> {
-    return super.get(state) || none
+export class SimpleBehavior<Spec, Value> extends Behavior<Spec, Value> {
+  // @internal
+  constructor(private combine: (specs: A<Spec>) => Value,
+              private behavior: (value: Value) => A<BehaviorUse>,
+              default_: Spec) {super(default_)}
+
+  // @internal
+  takeType(behaviors: BehaviorUse[]): Value {
+    let value = this.combine(this.sortedSpecs(behaviors))
+    let subs = this.behavior(value), first = true
+    this.registerSubBehaviors(subs);
+    for (let i = 0; i < behaviors.length; i++) if (behaviors[i].type == this) {
+      let sub = first ? subs.map(b => b.fillPriority(behaviors[i].priority)) : none
+      behaviors.splice(i, 1, ...sub)
+      first = false
+      i += sub.length - 1
+    }
+    return value
   }
 }
 
-Behavior.stateField = Behavior.defineSet()
-Behavior.viewPlugin = Behavior.defineSet()
-Behavior.indentation = Behavior.defineSet()
+export class SetBehavior<Spec> extends Behavior<Spec, A<Spec>> {
+  constructor(private behavior: (value: Spec) => A<BehaviorUse>,
+              default_: Spec) {super(default_)}
+
+  get(state: EditorState): A<Spec> {
+    return super.get(state) || none
+  }
+
+  // @internal
+  takeType(behaviors: BehaviorUse[]): A<Spec> {
+    let specs = this.sortedSpecs(behaviors)
+    for (let i = 0; i < behaviors.length; i++) if (behaviors[i].type == this) {
+      let sub = this.getBehaviors(this.behavior(behaviors[i].spec), behaviors[i].priority)
+      behaviors.splice(i, 1, ...sub)
+      i += sub.length - 1
+    }
+    return specs
+  }
+}
 
 export class BehaviorUse<Spec = any> {
   constructor(public type: Behavior<Spec, any>,
@@ -187,3 +192,11 @@ function findTopType(behaviors: BehaviorUse[]): Behavior<any, any> {
       return behavior.type
   throw new RangeError("Sub-behavior cycle in behaviors")
 }
+
+Behavior.stateField = Behavior.defineSet()
+Behavior.viewPlugin = Behavior.defineSet()
+Behavior.indentation = Behavior.defineSet()
+Behavior.multipleSelections = Behavior.define<boolean, boolean>({
+  combine: values => values.indexOf(true) > -1,
+  default: true
+})
