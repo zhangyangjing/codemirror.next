@@ -5,7 +5,7 @@ import {ContentBuilder} from "./buildview"
 import {Viewport, ViewportState} from "./viewport"
 import browser from "./browser"
 import {DOMObserver} from "./domobserver"
-import {HeightMap, QueryType, HeightOracle, MeasuredHeights, BlockInfo} from "./heightmap"
+import {HeightMap, QueryType, HeightOracle, MeasuredHeights, BlockInfo, dumpHeightMap} from "./heightmap"
 import {Decoration, DecorationSet, joinRanges, findChangedRanges, heightRelevantDecorations, WidgetType, BlockType} from "./decoration"
 import {clientRectsFor, isEquivalentPosition, scrollRectIntoView, maxOffset, Rect} from "./dom"
 import {ViewUpdate, ViewField} from "./extension"
@@ -378,6 +378,7 @@ export class DocView extends ContentView {
         this.heightOracle.heightChanged = false
         this.heightMap = this.heightMap.updateHeight(
           this.heightOracle, 0, refresh, new MeasuredHeights(this.viewport.from, lineHeights || this.measureVisibleLineHeights()))
+        dumpHeightMap(this.heightMap)
         let covered = this.viewportState.coveredBy(this.state.doc, this.viewport, this.heightMap, scrollBias)
         if (covered && !this.heightOracle.heightChanged) break
         if (!update) update = new ViewUpdate(this.view)

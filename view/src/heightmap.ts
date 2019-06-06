@@ -1,7 +1,9 @@
 import {Text} from "../../doc/src"
 import {ChangedRange} from "../../state/src"
 import {RangeSet, RangeIterator} from "../../rangeset/src/rangeset"
-import {DecorationSet, PointDecoration, Decoration, BlockType} from "./decoration"
+import {DecorationSet, PointDecoration, Decoration, BlockType, heightRelevantDecorations} from "./decoration"
+import { createSecurePair } from "tls";
+import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from "constants";
 
 const wrappingWhiteSpace = ["pre-wrap", "normal", "pre-line"]
 
@@ -584,4 +586,48 @@ class NodeBuilder implements RangeIterator<Decoration> {
     RangeSet.iterateSpans(decorations, from, to, builder)
     return builder.finish(from)
   }
+}
+
+export function dumpHeightMap(hm: HeightMap) {
+  let nodeId: number = 0;
+  let maps: string[] = [];
+  let nodes: string[] = [];
+
+  function dump(hm: HeightMap, parentId: number | null) {
+    if (null != parentId) {
+      nodeId++;
+      maps.push(`node${parentId} -> node${nodeId}`)
+    }
+
+    switch (true) {
+      case hm instanceof HeightMapBranch:
+        nodes.push(`node${nodeId} [shape=circle, label="length:${hm.length}\nheight:${hm.height}\nflags:${hm.flags}"]`)
+        let id = nodeId
+        let hmb = hm as HeightMapBranch;
+        dump(hmb.left, id);
+        dump(hmb.right, id);
+        break;
+      case hm instanceof HeightMapText:
+        nodes.push(`node${nodeId} [shape=box, label="length:${hm.length}\nheight:${hm.height}\nflags:${hm.flags}"]`)
+        break;
+      case hm instanceof HeightMapGap:
+        nodes.push(`node${nodeId} [shape=triangle, label="Gap"]`)
+        break;
+      default:
+        console.error("error heightMap type");
+        break;
+    }
+  }
+
+  dump(hm, null)
+
+  let mapsStr = maps.join("\n");
+  let nodesStr = nodes.join("\n");
+  let graphviz = `
+    digraph example1 {
+      ${mapsStr}
+      ${nodesStr}
+    }
+  `
+  console.log(graphviz)
 }
