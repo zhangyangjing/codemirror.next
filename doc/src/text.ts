@@ -566,3 +566,49 @@ class LineContent {
     }
   }
 }
+
+export function dumpText(text: Text) {
+  let nodeId: number = 0;
+  let maps: string[] = [];
+  let nodes: string[] = [];
+
+  function dump(text: Text, parentId: number | null) {
+    if (null != parentId) {
+      nodeId++;
+      maps.push(`node${parentId} -> node${nodeId}`)
+    }
+
+    switch (true) {
+      case text instanceof TextLeaf:
+        let leaf = text as TextLeaf;
+        nodes.push(`node${nodeId} [shape=ellipse, label="TextLeaf"]`)
+
+        let _nodeId = nodeId;
+        for (let str of leaf.text)  {
+          nodeId++;
+          maps.push(`node${_nodeId} -> node${nodeId}`)
+          nodes.push(`node${nodeId} [shape=box, label="${str.replace(/\"/g, "\\\"")}"]`)
+        }
+        break;
+      case text instanceof TextNode:
+        let node = text as TextNode;
+        nodes.push(`node${nodeId} [shape=circle]`)
+        for (let nd of node.children) {
+          dump(nd, nodeId);
+        }
+        break;
+    }
+  }
+
+  dump(text, null)
+
+  let mapsStr = maps.join("\n");
+  let nodesStr = nodes.join("\n");
+  let graphviz = `
+    digraph example1 {
+      ${mapsStr}
+      ${nodesStr}
+    }
+  `
+  console.log(graphviz)
+}

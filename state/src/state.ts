@@ -3,6 +3,7 @@ import {EditorSelection} from "./selection"
 import {Transaction} from "./transaction"
 import {ExtensionType, Extension, BehaviorStore} from "../../extension/src/extension"
 import {Tree} from "lezer-tree"
+import { dumpText } from "../../doc/src/text";
 
 const extendState = new ExtensionType
 
@@ -138,6 +139,7 @@ export class EditorState {
     let $config = Configuration.create(config)
     let doc = config.doc instanceof Text ? config.doc
       : Text.of(config.doc || "", $config.lineSeparator || undefined)
+    dumpText(doc);
     let selection = config.selection || EditorSelection.single(0)
     if (!$config.multipleSelections) selection = selection.asSingle()
     let fields: any[] = []
