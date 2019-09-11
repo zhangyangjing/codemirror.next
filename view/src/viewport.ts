@@ -44,6 +44,8 @@ export class ViewportState {
     this.bottom = 1e9
   }
 
+  // viewportState存储的是浏览器本地像素大小
+  // getViewport返回的是文档行数单位
   getViewport(doc: Text, heightMap: HeightMap, bias: number, scrollTo: number): Viewport {
     // This will divide VIEWPORT_MARGIN between the top and the
     // bottom, depending on the bias (the change in viewport position
