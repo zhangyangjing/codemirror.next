@@ -33,11 +33,14 @@
     "lezer-tree": "^0.4.0",
     "lezer-javascript": "^0.4.0",
     "lezer-css": "^0.4.0",
-    "lezer-html": "^0.4.0"
+    "lezer-html": "^0.4.0",
+    "dagre-d3": "^0.6.3"
   },
   "devDependencies": {
     "@types/mocha": "^5.2.0",
     "@types/selenium-webdriver": "^3.0.14",
+    "@types/dagre-d3": "^0.4.39",
+    "@types/d3": "^0.4.39",
     "ist": "^1.1.1",
     "mocha": "^5.1.1",
     "rollup": "^1.19.4",

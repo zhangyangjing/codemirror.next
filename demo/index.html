@@ -4,10 +4,37 @@
 
 <style>
 .codemirror { height: 300px; overflow: auto; border: 1px solid silver}
+
+g.type-TK > rect {
+  fill: #00ffd0;
+}
+
+text {
+  font-weight: 300;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+}
+
+svg {
+  width: 1920px;
+  height: 720px;
+}
+
+.node rect {
+  stroke: #999;
+  fill: #fff;
+  stroke-width: 1.5px;
+}
+
+.edgePath path {
+  stroke: #333;
+  stroke-width: 1.5px;
+}
 </style>
 
 <body>
   <h1>CM6</h1>
   <div id=editor></div>
   <script src="./demo_built.js"></script>
+  <svg id="svg-canvas"></svg>
 </body>

@@ -106,7 +106,7 @@ export function joinLines(text: ReadonlyArray<string>, lineSeparator: string = "
 
 const DEFAULT_SPLIT = /\r\n?|\n/
 
-class TextLeaf extends Text {
+export class TextLeaf extends Text {
   constructor(readonly text: ReadonlyArray<string>, readonly length: number = textLength(text)) {
     super()
   }
@@ -169,7 +169,7 @@ class TextLeaf extends Text {
   }
 }
 
-class TextNode extends Text {
+export class TextNode extends Text {
   readonly lines: number;
 
   constructor(readonly children: ReadonlyArray<Text>, readonly length: number) {
