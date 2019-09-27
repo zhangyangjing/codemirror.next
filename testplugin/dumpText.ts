@@ -7,17 +7,24 @@ import { stat } from "fs"
 
 class Test {
     graph: graphlib.Graph | null
+    render: dagre.Render | null
+    target: d3.Selection<any> | null
 }
 
 function dumpText(text: Text, state: Test) {
     if (!state.graph) {
         state.graph = new dagre.graphlib.Graph().setGraph({}).setDefaultEdgeLabel(function() { return {}; })
-        d3.select("svg").append("g")
+        state.render = new dagre.render();
+        state.target = d3.select("#graph_text").append("g")
     }
+
     let g = state.graph
+    let render = state.render
+    let target = state.target
     let nodeId: number = 0
-    let maps: string[] = []
-    let nodes: string[] = []
+
+    g.nodes().forEach(node => g.removeNode(node))
+    g.edges().forEach(edge => g.removeEdge(edge.w, edge.v))
 
     function dump(text: Text, parentId: number | null) {
         if (null != parentId) {
@@ -53,17 +60,16 @@ function dumpText(text: Text, state: Test) {
         node.rx = node.ry = 5;
     });
 
-    var render = new dagre.render();
-    render(d3.select("svg g"), g);
+    render(target, g);
 }
 
-export const testField = new StateField({
+export const dumpTextField = new StateField({
   init(editorState: EditorState): Test {
     return new Test()
   },
 
   apply(tr: Transaction, state: Test, editorState: EditorState): Test {
-        if (tr.changes.length) 
+        if (tr.docChanged) 
             dumpText(tr.doc, state)
       return state
   }

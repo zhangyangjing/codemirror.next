@@ -213,7 +213,7 @@ export abstract class HeightMap {
 
 HeightMap.prototype.size = 1
 
-class HeightMapBlock extends HeightMap {
+export class HeightMapBlock extends HeightMap {
   constructor(length: number, height: number, readonly type: BlockType) { super(length, height) }
 
   blockAt(height: number, doc: Text, top: number, offset: number) {
@@ -238,7 +238,7 @@ class HeightMapBlock extends HeightMap {
   toString() { return `block(${this.length})` }
 }
 
-class HeightMapText extends HeightMapBlock {
+export class HeightMapText extends HeightMapBlock {
   public collapsed = 0 // Amount of collapsed content in the line
   public widgetHeight = 0 // Maximum inline widget height
 
@@ -267,7 +267,7 @@ class HeightMapText extends HeightMapBlock {
   }
 }
 
-class HeightMapGap extends HeightMap {
+export class HeightMapGap extends HeightMap {
   constructor(length: number) { super(length, 0) }
 
   private lines(doc: Text, offset: number): {firstLine: number, lastLine: number, lineHeight: number} {
@@ -355,7 +355,7 @@ class HeightMapGap extends HeightMap {
   toString() { return `gap(${this.length})` }
 }
 
-class HeightMapBranch extends HeightMap {
+export class HeightMapBranch extends HeightMap {
   size: number
 
   constructor(public left: HeightMap, brk: number, public right: HeightMap) {

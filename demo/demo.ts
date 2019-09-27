@@ -11,7 +11,8 @@ import {syntaxIndentation} from "../syntax/src"
 
 import {html} from "../html/src/html"
 import {defaultTheme, highlight} from "../theme/src/"
-import {testField} from "../testplugin/test"
+import {dumpTextField} from "../testplugin/dumpText"
+import {dumpHeightMapPlugin} from "../testplugin/dumpHeightMap"
 
 let isMac = /Mac/.test(navigator.platform)
 let state = EditorState.create({doc: `<script>
@@ -23,7 +24,8 @@ let state = EditorState.create({doc: `<script>
 </script>`, extensions: [
   lineNumbers(),
   history(),
-  testField.extension,
+  dumpTextField.extension,
+  dumpHeightMapPlugin,
   specialChars(),
   multipleSelections(),
   html(),
