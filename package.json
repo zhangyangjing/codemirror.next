@@ -40,7 +40,6 @@
     "@types/mocha": "^5.2.0",
     "@types/selenium-webdriver": "^3.0.14",
     "@types/dagre-d3": "^0.4.39",
-    "@types/d3": "^0.4.39",
     "ist": "^1.1.1",
     "mocha": "^5.1.1",
     "rollup": "^1.19.4",
