@@ -129,6 +129,7 @@ export interface ViewPlugin {
 /// Extension to register view plugins. Call this value with the
 /// plugin's constructor, and [add](#view.EditorConfig.extensions) the
 /// result to the view.
+// viewPlugin: (value: (view: EditorView) => ViewPlugin) => Extension
 export const viewPlugin = extendView.behavior<(view: EditorView) => ViewPlugin>()
 
 /// Extension to add a [style

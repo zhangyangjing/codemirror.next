@@ -198,6 +198,7 @@ export type LineNumberMarkerUpdate = {
 
 export const lineNumberMarkers = Slot.define<LineNumberMarkerUpdate>()
 
+// lineNumbers是一个函数，定义与Behavior相同，调用这个函数生成Extension，通过extendState.resolve这个extension就形成了behavior
 export const lineNumbers = EditorView.extend.unique<LineNumberConfig>(configs => {
   let config = combineConfig(configs, {
     fixed: true,
@@ -214,7 +215,8 @@ export const lineNumbers = EditorView.extend.unique<LineNumberConfig>(configs =>
     elementClass: styles.lineNumberGutterElement,
     updateMarkers(markers: GutterMarkerSet, update: ViewUpdate) {
       let slot = update.getMeta(lineNumberMarkers)
-      if (slot) markers = markers.update(slot.add || [], slot.filter || null)
+      if (slot)
+        markers = markers.update(slot.add || [], slot.filter || null)
       return markers
     },
     lineMarker(view, line, others) {

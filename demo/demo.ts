@@ -2,7 +2,7 @@ import {EditorState, EditorSelection} from "../state/src"
 import {EditorView} from "../view/src/"
 import {keymap} from "../keymap/src/keymap"
 import {history, redo, redoSelection, undo, undoSelection} from "../history/src/history"
-import {lineNumbers} from "../gutter/src/index"
+import {lineNumbers, GutterMarker, lineNumberMarkers} from "../gutter/src/index"
 import {baseKeymap, indentSelection} from "../commands/src/commands"
 import {bracketMatching} from "../matchbrackets/src/matchbrackets"
 import {specialChars} from "../special-chars/src/special-chars"
@@ -21,8 +21,8 @@ let state = EditorState.create({doc: `<script>
   readFile("package.json", "utf8", (err, data) => {
     console.log(data);
   });
-</script>`, extensions: [
-  lineNumbers(),
+</script>`, extensions: [  // extensions?: ReadonlyArray<Extension>
+  lineNumbers(), // 返回了一个Extension
   history(),
   dumpTextField.extension,
   dumpHeightMapPlugin,
@@ -46,3 +46,16 @@ let state = EditorState.create({doc: `<script>
 
 let view = (window as any).view = new EditorView({state})
 document.querySelector("#editor").appendChild(view.dom)
+
+class MyMarker extends GutterMarker<void> {
+  toDOM() {
+    let s = document.createElement("span")
+    s.textContent = "★"
+    s.style.color = "red"
+    return s
+  }
+}
+
+  let {selection, doc} = view.state
+  let line = doc.lineAt(selection.primary.from).start
+  view.dispatch(view.state.t().addMeta(lineNumberMarkers({add: [MyMarker.create(line, undefined)], filter: () => false})))

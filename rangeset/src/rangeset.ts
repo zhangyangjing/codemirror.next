@@ -426,6 +426,7 @@ function addIterToHeap<T extends RangeValue>(heap: Heapable[], stack: IteratedSe
   }
 }
 
+// 二叉堆
 // Classic binary heap implementation, using the conformance to
 // `Heapable` of the elements to compare them with `compareHeapable`,
 // keeping the element with the lowest position at its top.

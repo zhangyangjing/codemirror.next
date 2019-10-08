@@ -378,7 +378,7 @@ export class DocView extends ContentView {
         this.heightOracle.heightChanged = false
         this.heightMap = this.heightMap.updateHeight(
           this.heightOracle, 0, refresh, new MeasuredHeights(this.viewport.from, lineHeights || this.measureVisibleLineHeights()))
-        dumpHeightMap(this.heightMap)
+        //dumpHeightMap(this.heightMap)
         let covered = this.viewportState.coveredBy(this.state.doc, this.viewport, this.heightMap, scrollBias)
         if (covered && !this.heightOracle.heightChanged) break
         if (!update) update = new ViewUpdate(this.view)

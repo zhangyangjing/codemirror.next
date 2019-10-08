@@ -45,6 +45,7 @@ export class ExtensionType {
   /// behaviors. Each behavior can have an ordered sequence of values
   /// associated with it. An `Extension` can be seen as a tree of
   /// sub-extensions with behaviors as leaves.
+  // 一个extension可以视为子extension组成的树，树的叶子是behavior
   behavior<Value>(): Behavior<Value> {
     let behavior = (value: Value) => new Extension(Kind.Behavior, behavior, value, this)
     return behavior
@@ -68,16 +69,17 @@ export class ExtensionType {
   /// Resolve an array of extensions by expanding all extensions until
   /// only behaviors are left, and then collecting the behaviors into
   /// arrays of values, preserving priority ordering throughout.
+  // 分解
   resolve(extensions: readonly Extension[]): BehaviorStore {
     let pending: Extension[] = new Extension(Kind.Multi, null, extensions, this).flatten(Priority.Default)
     // This does a crude topological ordering to resolve behaviors
-    // top-to-bottom in the dependency ordering. If there are no
+    // top-to-bottom in the dependency ordering,f. If there are no
     // cyclic dependencies, we can always find a behavior in the top
     // `pending` array that isn't a dependency of any unresolved
     // behavior, and thus find and order all its specs in order to
     // resolve them.
     for (let resolved: UniqueExtensionType[] = [];;) {
-      let top = findTopUnique(pending, this)
+      let top = findTopUnique(pending, this)  // 找到一个由unique函数生成的extension
       if (!top) break // Only behaviors left
       // Prematurely evaluated a behavior type because of missing
       // sub-behavior information -- start over, in the assumption
@@ -139,6 +141,8 @@ export class Extension {
   /// default and `extend` priorities.
   override() { return this.setPrio(Priority.Override) }
 
+  // 解析出所有的子extension
+  // 如果子extension有priority(非None)，就用自己的。没有的话用参数传入的
   /// @internal
   flatten(priority: Priority, target: Extension[] = []) {
     if (this.kind == Kind.Multi) for (let ext of this.value as Extension[])
@@ -176,6 +180,8 @@ class UniqueExtensionType {
     return false
   }
 
+  // 将extensions中和自己id相同的extension替换成子extension
+  // 好像是把多个相同uniqueextension的value收集起来，只产生一个实例，参数是收集到的value数组？
   resolve(extensions: Extension[]) {
     // Replace all instances of this type in extneions with the
     // sub-extensions that instantiating produces.
@@ -192,6 +198,7 @@ class UniqueExtensionType {
     }
   }
 
+  // 私有调用
   subs(specs: any[], priority: Priority) {
     let subs = this.instantiate(specs).flatten(priority)
     for (let sub of subs)

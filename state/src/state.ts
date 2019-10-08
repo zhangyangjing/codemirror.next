@@ -139,7 +139,7 @@ export class EditorState {
     let $config = Configuration.create(config)
     let doc = config.doc instanceof Text ? config.doc
       : Text.of(config.doc || "", $config.lineSeparator || undefined)
-    dumpText(doc);
+    //dumpText(doc);
     let selection = config.selection || EditorSelection.single(0)
     if (!$config.multipleSelections) selection = selection.asSingle()
     let fields: any[] = []

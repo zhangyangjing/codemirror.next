@@ -17,11 +17,12 @@ export class HeightOracle {
   // Used to track, during updateHeight, if any actual heights changed
   heightChanged: boolean = false
 
+  // from, to 参数是字符位置
   heightForGap(from: number, to: number): number {
-    let lines = this.doc.lineAt(to).number - this.doc.lineAt(from).number + 1
+    let lines = this.doc.lineAt(to).number - this.doc.lineAt(from).number + 1  // 行数
     if (this.lineWrapping)
-      lines += Math.ceil(((to - from) - (lines * this.lineLength * 0.5)) / this.lineLength)
-    return this.lineHeight * lines
+      lines += Math.ceil(((to - from) - (lines * this.lineLength * 0.5)) / this.lineLength)  // TODO: 这里是在算什么？
+    return this.lineHeight * lines  // 这么多行的总高度
   }
 
   heightForLine(length: number): number {
@@ -152,10 +153,10 @@ export abstract class HeightMap {
     let me: HeightMap = this
     for (let i = changes.length - 1; i >= 0; i--) {
       let {fromA, toA, fromB, toB} = changes[i]
-      let start = me.lineAt(fromA, QueryType.ByPosNoHeight, oldDoc, 0, 0)
-      let end = start.to >= toA ? start : me.lineAt(toA, QueryType.ByPosNoHeight, oldDoc, 0, 0)
-      toB += end.to - toA; toA = end.to
-      while (i > 0 && start.from <= changes[i - 1].toA) {
+      let start = me.lineAt(fromA, QueryType.ByPosNoHeight, oldDoc, 0, 0)  // fromA所在的行
+      let end = start.to >= toA ? start : me.lineAt(toA, QueryType.ByPosNoHeight, oldDoc, 0, 0)  // toA所在的行
+      toB += end.to - toA; toA = end.to  // 到行尾？
+      while (i > 0 && start.from <= changes[i - 1].toA) {  // 和下一个change的范围重叠了
         fromA = changes[i - 1].fromA
         fromB = changes[i - 1].fromB
         i--
@@ -575,7 +576,7 @@ class NodeBuilder implements RangeIterator<Decoration> {
 
   ignore(from: number, to: number, value: Decoration) { return from == to && !value.heightRelevant }
 
-  // Always called with a region that on both sides either stretches
+  // Always called with a region that on both sides either stretches 扩展
   // to a line break or the end of the document.
   // The returned array uses null to indicate line breaks, but never
   // starts or ends in a line break, or has multiple line breaks next
